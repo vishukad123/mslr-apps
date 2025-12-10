@@ -1,0 +1,1 @@
+UPDATE referendum SET status = 'open' WHERE referendum_id = 1;
