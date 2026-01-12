@@ -3,7 +3,6 @@ import { Card, CardContent, Typography, Radio, RadioGroup, FormControlLabel, But
 
 const ReferendumCard = ({ referendum, onVote }) => {
   const [selected, setSelected] = useState(referendum.hasVoted ? String(referendum.votedOptionId) : "");
-console.log("referendum============", referendum);
 
   React.useEffect(() => {
     if (referendum.hasVoted) {

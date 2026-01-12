@@ -33,6 +33,8 @@ const Login = () => {
     onSubmit: async (values) => {
       try {
         const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/ec/login`, values);
+        // Store EC email in localStorage for 'remember last username' compliance
+        localStorage.setItem('lastEcUsername', values.email);
         login(res.data.token, 'ec', res.data.name);
         navigate('/ec-dashboard');
       } catch (err) {

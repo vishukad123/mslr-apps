@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Button, TextField, List, ListItem, Switch } from '@material-ui/core';
-import { Dialog, DialogTitle, DialogContent, DialogActions } from '@material-ui/core';
+import { Container, Typography, Button, TextField, Grid, Chip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, MenuItem, Select } from '@material-ui/core';
+import { Accordion, AccordionSummary, AccordionDetails, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@material-ui/core';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import EditIcon from '@material-ui/icons/Edit';
 import Header from '../components/Header';
 import axios from 'axios';
 import { Bar } from 'react-chartjs-2';
@@ -16,6 +18,17 @@ const ECDashboard = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [createForm, setCreateForm] = useState({ title: '', description: '', options: ['', ''] });
   const [referendums, setReferendums] = useState([]);
+  const [filteredReferendums, setFilteredReferendums] = useState([]);
+  const [filter, setFilter] = useState('all');
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editData, setEditData] = useState(null);
+  const [editForm, setEditForm] = useState({ title: '', options: [] });
+  const [editChanged, setEditChanged] = useState(false);
+  const [optionError, setOptionError] = useState('');
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
+  const [pendingReferendum, setPendingReferendum] = useState(null);
   const [form, setForm] = useState({ title: '', description: '', options: [] });
   const [editing, setEditing] = useState(null);
   const { logout } = useAuth();
@@ -28,7 +41,94 @@ const ECDashboard = () => {
         console.error(err);
         toast.error('Error loading referendums');
       });
+    axios.get(`${process.env.REACT_APP_API_URL}/ec/total-users`)
+      .then(res => setTotalUsers(res.data.count))
+      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    let filtered = referendums;
+    if (filter !== 'all') filtered = referendums.filter(r => r.status === filter);
+    setFilteredReferendums(filtered);
+  }, [referendums, filter]);
+
+  const handleEdit = (referendum) => {
+    setEditData(referendum);
+    setEditForm({
+      title: referendum.title,
+      options: referendum.options.map(o => ({ option_text: o.option_text }))
+    });
+    setEditChanged(false);
+    setOptionError('');
+    setEditDialogOpen(true);
+  };
+
+  const handleEditFormChange = (field, value) => {
+    const newForm = { ...editForm, [field]: value };
+    setEditForm(newForm);
+    setEditChanged(
+      newForm.title !== editData.title ||
+      JSON.stringify(newForm.options) !== JSON.stringify(editData.options.map(o => ({ option_text: o.option_text })))
+    );
+  };
+
+  const handleOptionChange = (idx, value) => {
+    const newOptions = editForm.options.map((opt, i) => i === idx ? { option_text: value } : opt);
+    setEditForm(f => ({ ...f, options: newOptions }));
+    setEditChanged(
+      editForm.title !== editData.title ||
+      JSON.stringify(newOptions) !== JSON.stringify(editData.options.map(o => ({ option_text: o.option_text })))
+    );
+    setOptionError('');
+  };
+
+  const handleAddOption = () => {
+    const trimmed = editForm.options.map(o => o.option_text.trim());
+    if (trimmed.includes('')) {
+      setOptionError('Option cannot be empty.');
+      return;
+    }
+    const newOption = '';
+    setEditForm(f => ({ ...f, options: [...f.options, { option_text: newOption }] }));
+    setEditChanged(true);
+    setOptionError('');
+  };
+
+  const handleOptionBlur = (idx) => {
+    const value = editForm.options[idx].option_text.trim();
+    if (!value) {
+      setOptionError('Option cannot be empty.');
+      return;
+    }
+    // Check for duplicates
+    const allOptions = editForm.options.map(o => o.option_text.trim());
+    if (allOptions.filter(opt => opt === value).length > 1) {
+      setOptionError('Duplicate options are not allowed.');
+    } else {
+      setOptionError('');
+    }
+  };
+
+  const handleStatusChange = (referendum, checked) => {
+    setPendingReferendum(referendum);
+    setPendingStatus(checked ? 'open' : 'closed');
+    setStatusDialogOpen(true);
+  };
+
+  const confirmStatusChange = () => {
+    if (pendingReferendum) {
+      setReferendums(referendums.map(r => r.referendum_id === pendingReferendum.referendum_id ? { ...r, status: pendingStatus } : r));
+    }
+    setStatusDialogOpen(false);
+    setPendingReferendum(null);
+    setPendingStatus(null);
+  };
+
+  const cancelStatusChange = () => {
+    setStatusDialogOpen(false);
+    setPendingReferendum(null);
+    setPendingStatus(null);
+  };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -108,44 +208,129 @@ const ECDashboard = () => {
   return (
     <>
       <Header title="EC Dashboard" />
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '24px 32px 0 0' }}>
-        <Button variant="contained" color="primary" onClick={() => setDialogOpen(true)}>
-          Create Referendum
-        </Button>
-      </div>
       <Container style={{ marginTop: '30px' }}>
-        <List>
-          {referendums.map(r => (
-            <ListItem key={r.referendum_id} style={{ alignItems: 'flex-start' }}>
-              <div style={{ width: '100%', display: 'flex', alignItems: 'flex-start' }}>
-                <div style={{ flex: 4, minWidth: 200, maxWidth: 350 }}>
-                  <Typography>{r.title} ({r.status})</Typography>
-                  <div style={{ display: 'flex', alignItems: 'center', margin: '8px 0' }}>
-                    <Switch checked={r.status === 'open'} onChange={(_, checked) => toggleStatus(r.referendum_id, checked ? 'open' : 'closed')} />
-                    <Button onClick={() => edit(r)} style={{ marginLeft: 8 }}>Edit</Button>
-                  </div>
-                </div>
-                <div style={{ flex: 8, minWidth: 300, maxWidth: 700, paddingLeft: 24 }}>
-                  <Bar
-                    data={{
-                      labels: r.options.map(o => o.option_text),
-                      datasets: [{ label: 'Votes', data: r.options.map(o => o.votes), backgroundColor: '#2980b9' }]
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: { legend: { display: true, position: 'top' } },
-                      scales: { x: { title: { display: false } }, y: { beginAtZero: true } }
-                    }}
-                    height={180}
+        <Grid container alignItems="center" spacing={2} style={{ marginBottom: 8 }}>
+          <Grid item xs={6} style={{ display: 'flex', alignItems: 'center' }}>
+            <Select value={filter} onChange={e => setFilter(e.target.value)} style={{ minWidth: 120, marginRight: 16 }}>
+              <MenuItem value="open">Open</MenuItem>
+              <MenuItem value="closed">Closed</MenuItem>
+              <MenuItem value="all">All</MenuItem>
+            </Select>
+            <Typography variant="subtitle1" style={{ fontWeight: 600, marginLeft: 16 }}>Title</Typography>
+          </Grid>
+          <Grid item xs={3}><Typography variant="subtitle1" style={{ fontWeight: 600 }}>Votes</Typography></Grid>
+          <Grid item xs={3}><Typography variant="subtitle1" style={{ fontWeight: 600 }}>Status</Typography></Grid>
+          <Grid item xs={12} style={{ textAlign: 'right', position: 'absolute', right: 32, top: 90 }}>
+            <Button variant="contained" color="primary" onClick={() => setDialogOpen(true)}>
+              Create Referendum
+            </Button>
+          </Grid>
+        </Grid>
+        {filteredReferendums.map(r => (
+          <Accordion key={r.referendum_id} style={{ marginBottom: 8, background: '#fff', borderRadius: 8, boxShadow: '0 1px 4px #eee' }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Grid container alignItems="center">
+                <Grid item xs={6}>
+                  <Typography variant="body1">{r.title}</Typography>
+                </Grid>
+                <Grid item xs={3}>
+                  <Typography variant="body2">{(r.options?.reduce((sum, o) => sum + (o.votes || 0), 0)) || 0} / {totalUsers}</Typography>
+                </Grid>
+                <Grid item xs={3}>
+                  <Switch
+                    checked={r.status === 'open'}
+                    onChange={(_, checked) => handleStatusChange(r, checked)}
+                    color="primary"
                   />
-                </div>
+                  <Chip label={r.status === 'open' ? 'Open' : 'Closed'} color={r.status === 'open' ? 'primary' : 'default'} style={{ marginLeft: 8 }} />
+                </Grid>
+                    {/* Status Change Confirmation Dialog */}
+                    <Dialog open={statusDialogOpen} onClose={cancelStatusChange} maxWidth="xs" fullWidth>
+                      <DialogTitle>Change Status</DialogTitle>
+                      <DialogContent>
+                        <Typography>Are you sure you want to change the status of referendum?</Typography>
+                      </DialogContent>
+                      <DialogActions>
+                        <Button onClick={cancelStatusChange} color="secondary">Cancel</Button>
+                        <Button onClick={confirmStatusChange} color="primary">Confirm</Button>
+                      </DialogActions>
+                    </Dialog>
+              </Grid>
+            </AccordionSummary>
+            <AccordionDetails style={{ display: 'flex', flexDirection: 'column' }}>
+              <TableContainer component={Paper} style={{ boxShadow: 'none', marginBottom: 8 }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell><b>Option</b></TableCell>
+                      <TableCell><b>Votes</b></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {r.options && r.options.length > 0 ? (
+                      r.options.map((opt, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{opt.option_text}</TableCell>
+                          <TableCell>{opt.votes}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={2}>No options available.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <div style={{ width: '100%', textAlign: 'right', marginTop: 8 }}>
+                <IconButton onClick={() => handleEdit(r)}><EditIcon /></IconButton>
               </div>
-            </ListItem>
-          ))}
-        </List>
+            </AccordionDetails>
+          </Accordion>
+        ))}
         <ToastContainer />
       </Container>
+
+      {/* Edit Modal */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Referendum</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Title"
+            fullWidth
+            margin="normal"
+            value={editForm.title}
+            onChange={e => handleEditFormChange('title', e.target.value)}
+            disabled={editData?.status === 'open'}
+          />
+          <Typography variant="subtitle2" style={{ marginTop: 16 }}>Options:</Typography>
+          {editForm.options.length > 0 ? (
+            editForm.options.map((opt, idx) => (
+              <TextField
+                key={idx}
+                label={`Option ${idx + 1}`}
+                fullWidth
+                margin="normal"
+                value={opt.option_text}
+                onChange={e => handleOptionChange(idx, e.target.value)}
+                onBlur={() => handleOptionBlur(idx)}
+                error={!!optionError}
+                helperText={optionError && idx === editForm.options.length - 1 ? optionError : ''}
+                disabled={editData?.status === 'open'}
+              />
+            ))
+          ) : (
+            <Typography variant="body2">No options available.</Typography>
+          )}
+          <Button onClick={handleAddOption} color="primary" style={{ marginTop: 8 }} disabled={!!optionError || editData?.status === 'open'}>
+            Add Option
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)} color="secondary">Cancel</Button>
+          <Button color="primary" disabled={!editChanged || !!optionError}>Save</Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={dialogOpen} onClose={handleDialogClose} maxWidth="sm" fullWidth>
         <DialogTitle>Create Referendum</DialogTitle>
         <DialogContent>
