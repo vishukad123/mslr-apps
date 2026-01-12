@@ -12,10 +12,11 @@ const FormField = ({ name, label, type = 'text', formik }) => {
       margin="normal"
       label={label}
       type={type}
-      {...fieldProps}                    
-      error={showError}                   // show error only if user typed or scanned something
-      helperText={showError ? formik.errors[name] : ''} // avoid showing error for empty untouched fields
+      {...fieldProps}
+      error={showError}
+      helperText={showError ? formik.errors[name] : ''}
       variant="outlined"
+      InputLabelProps={type === 'date' ? { shrink: true } : undefined}
     />
   );
 };

@@ -7,27 +7,30 @@ export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const role = localStorage.getItem("role");
-
-     if (token && role) {
+    const role = localStorage.getItem('role');
+    const name = localStorage.getItem('name');
+    if (token && role) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser({ role: localStorage.getItem('role') }); // Simplify, decode if needed
+      setUser({ role, name });
     }
-      setLoading(false);
+    setLoading(false);
   }, []);
 
-  const login = (token, role) => {
+  const login = (token, role, name) => {
     localStorage.setItem('token', token);
     localStorage.setItem('role', role);
+    if (name) localStorage.setItem('name', name);
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setUser({ role });
+    setUser({ role, name });
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('name');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
   };

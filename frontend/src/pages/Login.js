@@ -19,7 +19,7 @@ const Login = () => {
     onSubmit: async (values) => {
       try {
         const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, values);
-        login(res.data.token, 'voter');
+        login(res.data.token, 'voter', res.data.name);
         navigate('/voter-dashboard');
       } catch (err) {
         alert(err.response.data.error);
@@ -33,7 +33,7 @@ const Login = () => {
     onSubmit: async (values) => {
       try {
         const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/ec/login`, values);
-        login(res.data.token, 'ec');
+        login(res.data.token, 'ec', res.data.name);
         navigate('/ec-dashboard');
       } catch (err) {
         alert(err.response.data.error);
@@ -42,60 +42,62 @@ const Login = () => {
   });
 
   return (
-    <Container maxWidth="sm" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'linear-gradient(to bottom, #e3f2fd, #bbdefb)' }}>
-      <Typography variant="h3" align="center" gutterBottom color="primary">
-        My Shangri-La Referendum
-      </Typography>
-      <Typography variant="subtitle1" align="center" gutterBottom>
-        Secure voting for a better future
-      </Typography>
-      <Card elevation={6}>
-        <CardContent>
-          <Tabs value={tab} onChange={(_, v) => setTab(v)} centered indicatorColor="primary" textColor="primary">
-            <Tab label="Voter" />
-            <Tab label="Election Commission" />
-          </Tabs>
-          {tab === 0 ? (
-            <form onSubmit={voterFormik.handleSubmit}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <FormField name="email" label="Email" formik={voterFormik} 
-                    InputProps={{ startAdornment: <InputAdornment position="start"><AccountCircle /></InputAdornment> }} />
+    <div style={{ minHeight: '100vh', width: '100vw', background: 'linear-gradient(to bottom, #e3f2fd, #bbdefb)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Container maxWidth="sm" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <Typography variant="h3" align="center" gutterBottom color="primary">
+          My Shangri-La Referendum
+        </Typography>
+        <Typography variant="subtitle1" align="center" gutterBottom>
+          Secure voting for a better future
+        </Typography>
+        <Card elevation={6}>
+          <CardContent>
+            <Tabs value={tab} onChange={(_, v) => setTab(v)} centered indicatorColor="primary" textColor="primary">
+              <Tab label="Voter" />
+              <Tab label="Election Commission" />
+            </Tabs>
+            {tab === 0 ? (
+              <form onSubmit={voterFormik.handleSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <FormField name="email" label="Email" formik={voterFormik} 
+                      InputProps={{ startAdornment: <InputAdornment position="start"><AccountCircle /></InputAdornment> }} />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <FormField name="password" label="Password" type="password" formik={voterFormik} 
+                      InputProps={{ startAdornment: <InputAdornment position="start"><Lock /></InputAdornment> }} />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button type="submit" variant="contained" color="primary" fullWidth>Login</Button>
+                  </Grid>
+                  <Grid item xs={12} style={{ textAlign: 'center' }}>
+                    <Typography variant="body2">
+                      Don't have an account? <Link to="/register" style={{ color: '#2980b9' }}>Register here</Link>
+                    </Typography>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12}>
-                  <FormField name="password" label="Password" type="password" formik={voterFormik} 
-                    InputProps={{ startAdornment: <InputAdornment position="start"><Lock /></InputAdornment> }} />
+              </form>
+            ) : (
+              <form onSubmit={ecFormik.handleSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <FormField name="email" label="Email" formik={ecFormik} disabled 
+                      InputProps={{ startAdornment: <InputAdornment position="start"><AccountCircle /></InputAdornment> }} />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <FormField name="password" label="Password" type="password" formik={ecFormik} 
+                      InputProps={{ startAdornment: <InputAdornment position="start"><Lock /></InputAdornment> }} />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button type="submit" variant="contained" color="primary" fullWidth>Login</Button>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12}>
-                  <Button type="submit" variant="contained" color="primary" fullWidth>Login</Button>
-                </Grid>
-                <Grid item xs={12} style={{ textAlign: 'center' }}>
-                  <Typography variant="body2">
-                    Don't have an account? <Link to="/register" style={{ color: '#2980b9' }}>Register here</Link>
-                  </Typography>
-                </Grid>
-              </Grid>
-            </form>
-          ) : (
-            <form onSubmit={ecFormik.handleSubmit}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <FormField name="email" label="Email" formik={ecFormik} disabled 
-                    InputProps={{ startAdornment: <InputAdornment position="start"><AccountCircle /></InputAdornment> }} />
-                </Grid>
-                <Grid item xs={12}>
-                  <FormField name="password" label="Password" type="password" formik={ecFormik} 
-                    InputProps={{ startAdornment: <InputAdornment position="start"><Lock /></InputAdornment> }} />
-                </Grid>
-                <Grid item xs={12}>
-                  <Button type="submit" variant="contained" color="primary" fullWidth>Login</Button>
-                </Grid>
-              </Grid>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </Container>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </Container>
+    </div>
   );
 };
 

@@ -5,11 +5,9 @@ import * as Yup from 'yup';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import FormField from '../components/FormField';
-import QRScanner from '../components/QRScanner';
 
 const Register = () => {
   const navigate = useNavigate();
-  const [showScanner, setShowScanner] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
 
   const today = new Date();
@@ -59,10 +57,6 @@ const Register = () => {
     },
   });
 
-  const handleScan = (decodedText) => {
-    formik.setFieldValue('scc', decodedText);
-    setShowScanner(false);
-  };
 
   // Update form validity for submit button
   useEffect(() => {
@@ -78,37 +72,6 @@ const Register = () => {
         <FormField name="dob" label="Date of Birth" type="date" formik={formik} />
         <FormField name="password" label="Password" type="password" formik={formik} />
         <FormField name="scc" label="SCC" formik={formik} />
-
-        {!showScanner && (
-  <Button
-    variant="contained"
-    color="secondary"
-    fullWidth
-    style={{ margin: '1rem 0' }}
-    onClick={() => setShowScanner(true)}
-  >
-    Scan QR
-  </Button>
-)}
-
-{showScanner && (
-  <div>
-    <QRScanner onScan={handleScan} />
-    <Button
-      variant="outlined"
-      color="default"
-      fullWidth
-      style={{ marginTop: '0.5rem' }}
-      onClick={() => setShowScanner(false)}  // closes the scanner
-    >
-      Cancel
-    </Button>
-  </div>
-)}
-
-
-        {/* {showScanner && <QRScanner onScan={handleScan} />} */}
-
         <Button
           type="submit"
           variant="contained"

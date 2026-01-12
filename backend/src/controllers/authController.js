@@ -34,7 +34,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign({ id: user[0].voter_email, role: 'voter' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
+    res.json({ token, name: user[0].fullname });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -47,5 +47,5 @@ exports.ecLogin = async (req, res) => {
   }
 
   const token = jwt.sign({ id: email, role: 'ec' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token });
+  res.json({ token, name: 'EC Admin' });
 };

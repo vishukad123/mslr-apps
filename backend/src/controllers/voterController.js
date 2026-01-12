@@ -2,11 +2,15 @@ const pool = require('../db');
 
 exports.getReferendums = async (req, res) => {
   try {
+    const voter_email = req.user.id;
     const [ref] = await pool.query('SELECT * FROM referendum WHERE status = "open"');
     const result = [];
     for (let r of ref) {
       const [opts] = await pool.query('SELECT * FROM referendum_options WHERE referendum_id = ?', [r.referendum_id]);
-      result.push({ ...r, options: opts });
+      const [vote] = await pool.query('SELECT voted_option_id FROM voter_history WHERE voter_email = ? AND voted_referendum_id = ?', [voter_email, r.referendum_id]);
+      const hasVoted = vote.length > 0;
+      const votedOptionId = hasVoted ? vote[0].voted_option_id : null;
+      result.push({ ...r, options: opts, hasVoted, votedOptionId });
     }
     res.json(result);
   } catch (err) {
