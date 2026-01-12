@@ -1,3 +1,14 @@
+---
+
+## 🔒 Security
+
+- **No secrets or credentials are included in this repository.** All sensitive information (such as database passwords, JWT secrets, etc.) must be provided via environment variables in your own `.env` files. These files are gitignored by default.
+- **All protected API endpoints require JWT authentication.**
+- **User input is validated on both client and server.**
+- **Dependencies should be kept up to date** using `npm audit` or similar tools.
+- **If you discover a security vulnerability, please report it by opening a GitHub issue or emailing vak9@student.le.ac.uk.**
+
+For more details, see [SECURITY.md](SECURITY.md).
 
 # My Shangri-La Referendum (MSLR)
 
